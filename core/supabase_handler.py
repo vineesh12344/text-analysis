@@ -1,8 +1,11 @@
 import os
 from dataclasses import dataclass
 import asyncio
-import datetime
-from typing import List
+import random
+import uuid
+from datetime import datetime, timezone
+from typing import List, Tuple
+import pytz
 import jsonlines
 from dotenv import load_dotenv
 from dateutil import parser
@@ -12,7 +15,7 @@ load_dotenv()
 
 @dataclass
 class Text:
-    date : datetime.datetime
+    date : datetime
     text_body : str
     person : str
     order : int
@@ -37,8 +40,7 @@ class SupabaseHandler:
                 num_chunks = len(inserts) // chunk_size + 1
                 for chunk_num, i in enumerate(range(0, len(inserts), chunk_size)):
                     await self.client.table(table).upsert(inserts[i:i+chunk_size]).execute()
-                    print(f"Progress {chunk_num + 1}/{num_chunks}")
-                    
+                    print(f"Progress {chunk_num + 1}/{num_chunks}")        
         except Exception as e:
             print(e)
                 
@@ -53,8 +55,23 @@ class SupabaseHandler:
                 texts.append(Text(line['date'], line['text_body'], line['person'], order = i))
                 
         await self.insert_texts(texts, table = table)
+        
+    async def get_random_text(self, table : str = "all_texts", chunk_size = 15) -> List[Tuple[str, Text]]:
+        rand_index = random.randint(0, await self.get_count(table))
+        response = await self.client.table(table).select("*").gte('"order"', rand_index).order('"order"').limit(chunk_size).execute()
+        all_data = response.data 
+        return [(data.pop('id'), Text(**data)) for data in all_data]
+    
+    async def insert_today(self, id : str, chunk_size : int) -> None:
+        try:
+            timestamp = datetime.now(tz=pytz.timezone('Asia/Hong_Kong')).isoformat()
+            insert_obj = {"text_id" : id, "take" : chunk_size, "date" : timestamp}
+            response = await self.client.table("today_chunk").insert(insert_obj).execute()
+        except Exception as e:
+            print(e)
 
 if __name__ == '__main__':
     handler = SupabaseHandler()
-    asyncio.run(handler.insert_texts_bulk(os.getenv('JSONL_TEXTS')))
+    # asyncio.run(handler.insert_texts_bulk(os.getenv('JSONL_TEXTS')))
+    print(asyncio.run(handler.get_random_text()))
     # print(uuid.uuid1().is_safe)

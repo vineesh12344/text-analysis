@@ -4,12 +4,12 @@ sys.path.append("./")
 import os
 import asyncio
 import json
-from typing import List, Dict, Deque
+from typing import List, Dict, Deque,AsyncGenerator, cast
 from collections import deque
 import jsonlines
 from dotenv import load_dotenv
 from dateutil import parser
-from pyrogram import Client
+from pyrogram.client import Client
 from pyrogram.types import Message
 from supabase_handler import SupabaseHandler, Text
 
@@ -30,11 +30,15 @@ class TelegramScraper:
         """
         os.makedirs("temp_data/telegram_sessions", exist_ok=True)
         self.CONFIG = {
-            "telegram_api_id": int(os.getenv("TG_API_ID")),
+            "telegram_api_id": int(cast(str, os.getenv("TG_API_ID"))),
             "telegram_hash": os.getenv("TG_API_HASH"),
             "phone_number": os.getenv("TG_PHONE_NUMBER"),
         }
-        self.contact =os.getenv("GF_NUMBER")
+        contact =os.getenv("GF_NUMBER")
+        
+        assert contact is not None, "Please provide the channel id"
+        
+        self.contact = contact
         self.messages: Deque[Text] = deque()
         self.supabase = SupabaseHandler()
 
@@ -56,7 +60,7 @@ class TelegramScraper:
         
         async with app:
             message: Message          
-            async for message in app.get_chat_history(chat_id=self.contact):
+            async for message in cast( AsyncGenerator, app.get_chat_history(chat_id=self.contact)):
                 if message.text is not None:
                     text = message.text
                     

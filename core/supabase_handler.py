@@ -4,18 +4,19 @@ import asyncio
 import random
 import uuid
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Tuple, cast, Iterable
 import pytz
 import jsonlines
 from dotenv import load_dotenv
 from dateutil import parser
 from supabase_py_async import create_client, AsyncClient
+from postgrest.types import CountMethod
 
 load_dotenv()
 
 @dataclass
 class Text:
-    date : datetime
+    date : str
     text_body : str
     person : str
     order : int
@@ -28,10 +29,14 @@ class SupabaseHandler:
     def __init__(self) -> None:
         url = os.getenv('PROJECT_URL')
         key = os.getenv('API_KEY')
+        
+        assert url is not None, "Please provide the project url"
+        assert key is not None, "Please provide the api key"
+        
         self.client : AsyncClient= asyncio.run(create_client(url, key))
         self.seen = set()
 
-    async def insert_texts(self, text : Text | List[Text], table : str = "all_texts", chunk_size : int = 10000) -> None:
+    async def insert_texts(self, text : Text | Iterable[Text], table : str = "all_texts", chunk_size : int = 10000) -> None:
         inserts : List[dict] | dict = vars(text) if isinstance(text, Text) else [vars(t) for t in text]
         try:
             if len(inserts) == 1:
@@ -45,7 +50,10 @@ class SupabaseHandler:
             print(e)
                 
     async def get_count(self, table : str = "all_texts") -> int:
-        response = await self.client.table(table).select("*", count = 'exact').execute()
+        response = await self.client.table(table).select("*", count = cast(CountMethod, 'exact')).execute()
+        if response.count is None:
+            return 0
+        
         return response.count
                 
     async def insert_texts_bulk(self, filepath : str, table : str = "all_texts") -> None:

@@ -1,0 +1,10 @@
+jsonlines==4.0.0
+nest_asyncio==1.6.0
+pandas==2.2.2
+postgrest==0.16.4
+Pyrogram==2.0.106
+python-dotenv==1.0.1
+python_dateutil==2.9.0.post0
+pytz==2024.1
+supabase_py_async==2.5.6
+transformers==4.40.2

@@ -1,4 +1,9 @@
+import sys
+
+sys.path.append("./")
 import asyncio
+import nest_asyncio
+nest_asyncio.apply()
 from core.sentiment_analysis import SentimentAnalyzer
 from core.telegram_scraper import TelegramScraper
 

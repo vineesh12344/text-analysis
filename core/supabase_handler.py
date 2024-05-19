@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import asyncio
 import random
 import uuid
@@ -77,9 +77,16 @@ class SupabaseHandler:
             response = await self.client.table("today_chunk").insert(insert_obj).execute()
         except Exception as e:
             print(e)
+            
+    async def get_last_message(self, table : str = "all_texts") -> Text:
+        response = await self.client.table(table).select("*").order('"order"', desc = True).limit(1).execute()
+        text = response.data[0]
+        text.pop('id')
+        return Text(**text)
 
 if __name__ == '__main__':
     handler = SupabaseHandler()
     # asyncio.run(handler.insert_texts_bulk(os.getenv('JSONL_TEXTS')))
-    print(asyncio.run(handler.get_random_text()))
+    # print(asyncio.run(handler.get_random_text()))
     # print(uuid.uuid1().is_safe)
+    print(asyncio.run(handler.get_last_message()))

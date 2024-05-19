@@ -7,7 +7,7 @@ from functools import reduce
 import operator
 from typing import List, Tuple, Any, Dict, Iterable, cast
 from transformers import pipeline
-from supabase_handler import Text, SupabaseHandler
+from core.supabase_handler import Text, SupabaseHandler
 
 
 @dataclass

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from dateutil import parser
 from pyrogram.client import Client
 from pyrogram.types import Message
-from supabase_handler import SupabaseHandler, Text
+from core.supabase_handler import SupabaseHandler, Text
 
 load_dotenv()
 
@@ -49,14 +49,7 @@ class TelegramScraper:
         This method iterates over the message history of the channel, filtering out messages without text,
         and appends each message's ID and text to the `messages` list attribute of the TelegramScraper object.
         """
-        last_checks = (None, None)
-        with jsonlines.open("result.jsonl") as reader:
-            last_line = None
-            for line in reader:
-                last_line = line
-                
-            if last_line is not None:
-                last_checks = (parser.parse(last_line["date"]).isoformat(), last_line["text_body"])
+        last_text = await self.supabase.get_last_message()
         
         async with app:
             message: Message          
@@ -64,7 +57,7 @@ class TelegramScraper:
                 if message.text is not None:
                     text = message.text
                     
-                    if message.date.isoformat() == last_checks[0] and text == last_checks[1]:
+                    if message.date.isoformat() == last_text.date and text == last_text.text_body:
                         break
 
                     if text != "":
